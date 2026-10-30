@@ -1,0 +1,16 @@
+# DeepSeek-V4.1 Mono decode on ROCm
+
+On gfx950, `--monokernel` lets DeepSeek-V4.1 use Mono decode with its
+528-byte MXFP8 KV record. Enable it with `--monokernel --kv-cache-dtype fp8`.
+The record includes all 512 dimensions and 16 scale bytes per token.
+Without `--monokernel`, vLLM uses its ordinary attention path.
+
+`VLLM_ROCM_USE_AITER_TRITON_SPARSE_MLA=1` keeps the 584-byte V4 record.
+The Mono format support does not enable aiter's V4.1 reader.
+
+The implementation also adds Mono reads of the 288-byte NVFP4 compressed
+record with `--kv-cache-dtype nvfp4_ds_mla`. Its sliding-window cache stays
+in the 528-byte MXFP8 format. This combination passes layer numerical tests,
+but full-model serving has an unresolved timeout. It is not yet validated
+for production use. Prefix caching and mixed prefill/decode need further
+validation. NVFP4 Mono support is limited to gfx950.
